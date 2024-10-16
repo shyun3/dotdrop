@@ -5,21 +5,20 @@ Copyright (c) 2017, deadc0de6
 jinja2 template generator
 """
 
-import os
 import io
-import re
 import mmap
-from jinja2 import Environment, FileSystemLoader, \
-    ChoiceLoader, FunctionLoader, TemplateNotFound, \
-    StrictUndefined
+import os
+import re
+import sys
+
+from jinja2 import (ChoiceLoader, Environment, FileSystemLoader,
+                    FunctionLoader, StrictUndefined, TemplateNotFound)
 from jinja2.exceptions import UndefinedError
 
-
 # local imports
-from dotdrop import utils
-from dotdrop import jhelpers
-from dotdrop.logger import Logger
+from dotdrop import jhelpers, utils
 from dotdrop.exceptions import UndefinedException
+from dotdrop.logger import Logger
 
 BLOCK_START = '{%@@'
 BLOCK_END = '@@%}'
@@ -192,7 +191,13 @@ class Templategen:
             self.log.dbg('using \"magic\" for filetype identification')
         except ImportError:
             # fallback
-            _, filetype = utils.run(['file', '-L', '-b', '--mime-type', src],
+
+            # `file` on Windows doesn't support `-L`
+            follow_symlink = ['-L'] if sys.platform != 'win32' else []
+
+            _, filetype = utils.run(['file'] + follow_symlink + ['-b',
+                                                                 '--mime-type',
+                                                                 src],
                                     debug=self.debug)
             self.log.dbg('using \"file\" for filetype identification')
             filetype = filetype.strip()
